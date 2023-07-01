@@ -4,27 +4,21 @@ on: push
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - name: descargar repostorio
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
       - name: pruebas-unitarias
         run: mvn test
-      - name: compilar la aplicación sin repetir pruebas
+      - name: empaquetar
         run: mvn package -DskipTests=true
 
   test:
     needs: build
     runs-on: self-hosted
     steps:
-      - name: descargar repostorio
-        uses: actions/checkout@v3
-      - name: instalar aplicación en Tomcat
-        run: |
-          mvn package -DskipTests=true
+      - name: pruebas-funcionales
+        run:
           cp -r target/Baloncesto /usr/local/tomcat/webapps
-      - name: preparar base de datos de prueba
-        run: |
           mysql -u root < db/baloncesto.sql
           export DATABASE_HOST="jdbc:mysql://localhost"
           export DATABASE_PORT="3306"
@@ -33,8 +27,6 @@ jobs:
           export DATABASE_PASS="clave"
           sh /usr/local/tomcat/bin/catalina.sh stop
           sh /usr/local/tomcat/bin/catalina.sh start
-      - name: realizar pruebas funcionales
-        run: |
           mvn failsafe:integration-test failsafe:verify
   
   qa:
